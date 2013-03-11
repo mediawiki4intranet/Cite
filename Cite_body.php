@@ -1056,6 +1056,17 @@ class Cite {
 	}
 
 	/**
+	 * Called before page processing to detect nested parse() calls
+	 */
+	function checkRefsBefore( &$parser, &$text, &$stripState ) {
+		if ( !isset( $parser->extCiteCalls ) ) {
+			$parser->extCiteCalls = 0;
+		}
+		$parser->extCiteCalls++;
+		return true;
+	}
+
+	/**
 	 * Called at the end of page processing to append an error if refs were
 	 * used without a references tag.
 	 *
@@ -1065,18 +1076,13 @@ class Cite {
 	 *
 	 * @return bool
 	 */
-	function checkRefsNoReferences( $afterParse, &$parser, &$text ) {
+	function checkRefsNoReferences( &$parser, &$text ) {
 		if ( $parser->extCite !== $this ) {
-			return $parser->extCite->checkRefsNoReferences( $afterParse, $parser, $text );
+			return $parser->extCite->checkRefsNoReferences( $parser, $text );
 		}
 
-		if ( $afterParse ) {
-			$this->mHaveAfterParse = true;
-		} elseif ( $this->mHaveAfterParse ) {
-			return true;
-		}
-
-		if ( $parser->getOptions()->getIsSectionPreview() ) {
+		if ( $parser->getOptions()->getIsSectionPreview() || $parser->extCiteCalls > 1 ) {
+			$parser->extCiteCalls--;
 			return true;
 		}
 
@@ -1091,6 +1097,8 @@ class Cite {
 				$text .= $this->error( 'cite_error_group_refs_without_references', htmlspecialchars( $group ) );
 			}
 		}
+
+		$parser->extCiteCalls--;
 		return true;
 	}
 
@@ -1122,8 +1130,8 @@ class Cite {
 
 		if ( !Cite::$hooksInstalled ) {
 			$wgHooks['ParserClearState'][] = array( $parser->extCite, 'clearState' );
-			$wgHooks['ParserAfterParse'][] = array( $parser->extCite, 'checkRefsNoReferences', true );
-			$wgHooks['ParserBeforeTidy'][] = array( $parser->extCite, 'checkRefsNoReferences', false );
+			$wgHooks['ParserBeforeInternalParse'][] = array( $parser->extCite, 'checkRefsBefore' );
+			$wgHooks['InternalParseBeforeLinks'][] = array( $parser->extCite, 'checkRefsNoReferences' );
 			$wgHooks['InlineEditorPartialAfterParse'][] = array( $parser->extCite, 'checkAnyCalls' );
 			Cite::$hooksInstalled = true;
 		}

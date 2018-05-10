@@ -1001,7 +1001,7 @@ class Cite {
 	 *
 	 * @return bool
 	 */
-	function clearState( &$parser ) {
+	function clearState( $parser ) {
 		if ( $parser->extCite !== $this ) {
 			return $parser->extCite->clearState( $parser );
 		}
@@ -1058,7 +1058,7 @@ class Cite {
 	 *
 	 * @return bool
 	 */
-	function checkRefsNoReferences( $afterParse, &$parser, &$text ) {
+	function checkRefsNoReferences( $afterParse, $parser, &$text ) {
 		if ( is_null( $parser->extCite ) ) {
 			return true;
 		}
@@ -1099,7 +1099,7 @@ class Cite {
 	 *
 	 * @return bool
 	 */
-	function checkAnyCalls( &$output ) {
+	function checkAnyCalls( $output ) {
 		global $wgParser;
 		/* InlineEditor always uses $wgParser */
 		return ( $wgParser->extCite->mCallCnt <= 0 );
